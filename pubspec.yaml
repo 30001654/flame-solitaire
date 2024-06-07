@@ -1,0 +1,17 @@
+name: flame_solitare_tutorial
+description: "A Flutter Flame Solitare (Klondike) game tutorial"
+version: 0.0.0
+publish_to: none
+
+environment:
+  sdk: ^3.0.0
+  flutter: ^3.13.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flame: ^1.18.0
+
+
+dev_dependencies:
+  flutter_lints: ^3.0.0
