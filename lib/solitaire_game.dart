@@ -1,41 +1,47 @@
-import 'dart:math';
-
 import 'package:flame/components.dart';
 import 'package:flame/flame.dart';
 import 'package:flame/game.dart';
 
 import 'common/constants/global_constants.dart';
 import 'components/card.dart';
-import 'components/foundation.dart';
-import 'components/pile.dart';
-import 'components/stock.dart';
-import 'components/waste.dart';
+import 'components/foundation_pile.dart';
+import 'components/tableau_pile.dart';
+import 'components/stock_pile.dart';
+import 'components/waste_pile.dart';
 
 class SolitaireGame extends FlameGame {
   @override
   Future<void> onLoad() async {
     await Flame.images.load('klondike-sprites.png');
 
-    final Stock stock = Stock()
+    final StockPile stock = StockPile()
       ..size = cardSize
       ..position = Vector2(cardGap, cardGap);
-    final Waste waste = Waste()
+    final WastePile waste = WastePile()
       ..size = cardSize
       ..position = Vector2(cardWidth + (2 * cardGap), cardGap);
-    final List<Foundation> foundations = _generateFoundations(4);
-    final List<Pile> piles = _generatePiles(7);
+    final List<FoundationPile> foundations = _generateFoundations(4);
+    final List<TableauPile> piles = _generatePiles(7);
 
     world.addAll([stock, waste, ...foundations, ...piles]);
     _initCamera(camera);
 
-    final rand = Random();
+    final cards = [
+      for (int rank = 1; rank <= 13; rank++)
+        for (int suit = 0; suit < 4; suit++) Card(rank, suit)
+    ];
+    cards.shuffle();
+    world.addAll(cards);
+
+    int cardToDeal = cards.length - 1;
     for (int i = 0; i < 7; i++) {
-      for (int j = 0; j < 4; j++) {
-        final card = Card(rand.nextInt(13) + 1, rand.nextInt(4))
-          ..position = Vector2(100 + i * 1150, 100 + j * 1500)
-          ..addToParent(world);
-        if (rand.nextDouble() < 0.9) card.flip();
+      for (int j = i; j < 7; j++) {
+        piles[j].acquireCard(cards[cardToDeal--]);
       }
+      piles[i].flipTopCard();
+    }
+    for (int n = 0; n <= cardToDeal; n++) {
+      stock.acquireCard(cards[n]);
     }
   }
 }
@@ -52,11 +58,11 @@ void _initCamera(CameraComponent camera) {
   camera.viewfinder.anchor = Anchor.topCenter;
 }
 
-List<Foundation> _generateFoundations(int count) {
+List<FoundationPile> _generateFoundations(int count) {
   return List.generate(
     count,
     (i) {
-      return Foundation()
+      return FoundationPile(i)
         ..size = cardSize
         ..position = Vector2(
           (i + 3) * (cardWidth + cardGap) + cardGap,
@@ -66,11 +72,11 @@ List<Foundation> _generateFoundations(int count) {
   );
 }
 
-List<Pile> _generatePiles(int count) {
+List<TableauPile> _generatePiles(int count) {
   return List.generate(
     count,
     (i) {
-      return Pile()
+      return TableauPile()
         ..size = cardSize
         ..position = Vector2(
           cardGap + i * (cardWidth + cardGap),
